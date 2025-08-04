@@ -4,16 +4,6 @@ import { Bars3Icon, BellIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router-dom";
 import AuthContext from "../AuthContext";
 
-const navigation = [
-  { name: "Dashboard", href: "/", current: true },
-  { name: "Inventory", href: "/inventory", current: false },
-  { name: "Purchase Details", href: "/purchase-details", current: false },
-  { name: "Sales", href: "/sales", current: false },
-  { name: "Manage Store", href: "/manage-store", current: false },
-];
-
-const userNavigation = [{ name: "Sign out", href: "./login" }];
-
 function classNames(...classes) {
   return classes.filter(Boolean).join(" ");
 }
@@ -21,6 +11,20 @@ function classNames(...classes) {
 export default function Header() {
   const authContext = useContext(AuthContext);
   const localStorageData = JSON.parse(localStorage.getItem("user"));
+  const userRole = localStorageData?.role;
+
+  // Navigation based on role
+  const baseNavigation = [
+    { name: "Dashboard", href: "/", roles: ["Admin", "Lab Technician", "Researcher", "Manufacturing Engineer"] },
+    { name: "Inventory", href: "/inventory", roles: ["Admin", "Lab Technician", "Researcher", "Manufacturing Engineer"] },
+    { name: "Purchase Details", href: "/purchase-details", roles: ["Admin", "Lab Technician"] },
+    { name: "Sales", href: "/sales", roles: ["Admin", "Lab Technician", "Manufacturing Engineer"] },
+    { name: "Manage Store", href: "/manage-store", roles: ["Admin"] },
+    { name: "Manage Users", href: "/manage-users", roles: ["Admin"] }, // Admin only
+  ];
+
+  const navigation = baseNavigation.filter((item) => item.roles.includes(userRole));
+  const userNavigation = [{ name: "Sign out", href: "./login" }];
 
   return (
     <div className="min-h-full">
@@ -29,33 +33,36 @@ export default function Header() {
           <>
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
               <div className="flex h-16 items-center justify-between">
-                {/* Logo and Title */}
+                {/* Logo & Title */}
                 <div className="flex items-center">
-                  <img
-                    className="h-8 w-8"
-                    src={require("../assets/logo.png")}
-                    alt="Logo"
-                  />
+                  <img className="h-8 w-8" src={require("../assets/logo.png")} alt="Logo" />
                   <span className="ml-2 text-white font-bold italic text-sm sm:text-lg">
                     Inventory Management
                   </span>
                 </div>
 
-                {/* Desktop Right Section */}
-                <div className="hidden md:flex items-center space-x-4">
-                  <button
-                    type="button"
-                    className="p-1 rounded-full text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
-                  >
-                    <span className="sr-only">View notifications</span>
-                    <BellIcon className="h-6 w-6" aria-hidden="true" />
-                  </button>
+                {/* Desktop Nav */}
+                <div className="hidden md:flex items-center space-x-6">
+                  {navigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className="text-gray-300 hover:text-white px-3 py-2 text-sm font-medium"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </div>
 
-                  {/* Profile dropdown */}
+                {/* User Section */}
+                <div className="hidden md:flex items-center space-x-4">
+                  <span className="text-white text-sm font-medium">
+                    {localStorageData?.firstName} ({userRole})
+                  </span>
+
                   <Menu as="div" className="relative">
                     <div>
                       <Menu.Button className="flex items-center text-sm focus:outline-none">
-                        <span className="sr-only">Open user menu</span>
                         <img
                           className="h-8 w-8 rounded-full"
                           src={localStorageData?.imageUrl || "/default-profile.png"}
@@ -82,10 +89,9 @@ export default function Header() {
                                   active ? "bg-gray-100" : "",
                                   "block px-4 py-2 text-sm text-gray-700"
                                 )}
+                                onClick={() => authContext.signout()}
                               >
-                                <span onClick={() => authContext.signout()}>
-                                  {item.name}
-                                </span>
+                                {item.name}
                               </Link>
                             )}
                           </Menu.Item>
@@ -95,21 +101,17 @@ export default function Header() {
                   </Menu>
                 </div>
 
-                {/* Mobile menu button */}
+                {/* Mobile menu toggle */}
                 <div className="md:hidden">
                   <Disclosure.Button className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-white">
                     <span className="sr-only">Open main menu</span>
-                    {open ? (
-                      <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                    ) : (
-                      <Bars3Icon className="h-6 w-6" aria-hidden="true" />
-                    )}
+                    {open ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
                   </Disclosure.Button>
                 </div>
               </div>
             </div>
 
-            {/* Mobile Navigation Panel */}
+            {/* Mobile Navigation */}
             <Disclosure.Panel className="md:hidden">
               <div className="space-y-1 px-2 pt-2 pb-3 sm:px-3">
                 {navigation.map((item) => (
@@ -117,9 +119,7 @@ export default function Header() {
                     <Disclosure.Button
                       as="span"
                       className={classNames(
-                        item.current
-                          ? "bg-gray-900 text-white"
-                          : "text-gray-300 hover:bg-gray-700 hover:text-white",
+                        "text-gray-300 hover:bg-gray-700 hover:text-white",
                         "block rounded-md px-3 py-2 text-base font-medium"
                       )}
                     >
@@ -128,39 +128,29 @@ export default function Header() {
                   </Link>
                 ))}
               </div>
-              <div className="border-t border-gray-700 pt-4 pb-3">
-                <div className="flex items-center px-5">
+              <div className="border-t border-gray-700 pt-4 pb-3 px-5">
+                <div className="flex items-center space-x-4">
                   <img
                     className="h-10 w-10 rounded-full"
                     src={localStorageData?.imageUrl || "/default-profile.png"}
                     alt="User"
                   />
-                  <div className="ml-3">
-                    <div className="text-base font-medium text-white">
+                  <div>
+                    <div className="text-white text-sm font-medium">
                       {localStorageData?.firstName + " " + localStorageData?.lastName}
                     </div>
-                    <div className="text-sm font-medium text-gray-400">
-                      {localStorageData?.email}
-                    </div>
+                    <div className="text-gray-400 text-xs">{localStorageData?.email}</div>
                   </div>
-                  <button
-                    type="button"
-                    className="ml-auto p-1 rounded-full text-gray-400 hover:text-white"
-                  >
-                    <BellIcon className="h-6 w-6" aria-hidden="true" />
-                  </button>
                 </div>
-                <div className="mt-3 space-y-1 px-2">
+                <div className="mt-3 space-y-1">
                   {userNavigation.map((item) => (
                     <Disclosure.Button
                       key={item.name}
-                      as="a"
-                      href={item.href}
-                      className="block rounded-md px-3 py-2 text-base font-medium text-gray-400 hover:bg-gray-700 hover:text-white"
+                      as="button"
+                      className="block w-full text-left text-gray-300 hover:bg-gray-700 hover:text-white px-3 py-2 text-base font-medium"
+                      onClick={() => authContext.signout()}
                     >
-                      <span onClick={() => authContext.signout()}>
-                        {item.name}
-                      </span>
+                      {item.name}
                     </Disclosure.Button>
                   ))}
                 </div>

@@ -7,23 +7,24 @@ function Layout() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <>
+    <div className="flex flex-col h-screen">
       {/* Header */}
       <div className="h-16 w-full sticky top-0 z-50 bg-white shadow-md">
         <Header onMenuToggle={() => setIsMenuOpen(!isMenuOpen)} />
       </div>
 
-      <div className="flex bg-gray-100 min-h-screen">
-        {/* Side Menu: Visible on large screens, toggle on mobile */}
+      {/* Main content area */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
         <div
           className={`fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
-            ${isMenuOpen ? "translate-x-0" : "-translate-x-full"}
-            lg:static lg:translate-x-0 lg:flex`}
+          ${isMenuOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:static lg:translate-x-0 lg:block`}
         >
           <SideMenu />
         </div>
 
-        {/* Overlay for mobile menu */}
+        {/* Mobile overlay */}
         {isMenuOpen && (
           <div
             className="fixed inset-0 z-30 bg-black bg-opacity-50 lg:hidden"
@@ -31,12 +32,12 @@ function Layout() {
           ></div>
         )}
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 mt-4 lg:mt-0">
+        {/* Outlet area */}
+        <main className="flex-1 overflow-y-auto p-4 bg-gray-100">
           <Outlet />
         </main>
       </div>
-    </>
+    </div>
   );
 }
 

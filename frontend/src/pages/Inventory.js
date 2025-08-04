@@ -12,7 +12,7 @@ function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [stores, setAllStores] = useState([]);
 
-  const authContext = useContext(AuthContext);
+  const { role } = useContext(AuthContext);
 
   // Dummy data for demo
   useEffect(() => {
@@ -56,7 +56,7 @@ function Inventory() {
     ];
     setAllProducts(dummyProducts);
     setFilteredProducts(dummyProducts);
-    setAllStores([{ id: 1 }, { id: 2 }]); // Dummy store count
+    setAllStores([{ id: 1 }, { id: 2 }]);
   }, []);
 
   const addProductModalSetting = () => setShowProductModal(!showProductModal);
@@ -69,7 +69,7 @@ function Inventory() {
 
   const updateProductModalSetting = (selectedProductData) => {
     setUpdateProduct(selectedProductData);
-    setShowUpdateModal(!showUpdateModal);
+    setShowUpdateModal(true);
   };
 
   const deleteItem = (id) => {
@@ -96,19 +96,19 @@ function Inventory() {
   };
 
   const handleCategoryFilter = (value) => {
-    if (value === "All") {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(products.filter((p) => p.category === value));
-    }
+    setFilteredProducts(
+      value === "All"
+        ? products
+        : products.filter((p) => p.category === value)
+    );
   };
 
   const handleManufacturerFilter = (value) => {
-    if (value === "All") {
-      setFilteredProducts(products);
-    } else {
-      setFilteredProducts(products.filter((p) => p.manufacturer === value));
-    }
+    setFilteredProducts(
+      value === "All"
+        ? products
+        : products.filter((p) => p.manufacturer === value)
+    );
   };
 
   const downloadCSV = () => {
@@ -136,7 +136,6 @@ function Inventory() {
       product.criticalLow,
       product.stock <= product.criticalLow ? "Low" : "In Stock",
     ]);
-
     const csvContent =
       "data:text/csv;charset=utf-8," +
       [headers, ...rows].map((row) => row.join(",")).join("\n");
@@ -153,7 +152,7 @@ function Inventory() {
   return (
     <div className="col-span-12 lg:col-span-10 flex justify-center">
       <div className="flex flex-col gap-5 w-11/12">
-        {/* Dashboard Overview */}
+        {/* Overview */}
         <div className="bg-white rounded p-3">
           <span className="font-semibold px-4">Overall Inventory</span>
           <div className="grid md:grid-cols-4 gap-4 p-5">
@@ -233,27 +232,35 @@ function Inventory() {
         <div className="overflow-x-auto rounded-lg border bg-white border-gray-200">
           <div className="flex justify-between pt-5 pb-3 px-3">
             <span className="font-bold">Product Inventory</span>
-            <button
-              className="bg-blue-500 hover:bg-blue-700 text-white font-bold p-2 text-xs rounded"
-              onClick={addProductModalSetting}
-            >
-              ➕ Add Product
-            </button>
+            {["Admin", "Lab Technician"].includes(role) && (
+              <button
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold p-2 text-xs rounded"
+                onClick={addProductModalSetting}
+              >
+                ➕ Add Product
+              </button>
+            )}
           </div>
           <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead>
               <tr className="bg-gray-50">
-                <th className="px-4 py-2 text-left font-medium">Category</th>
-                <th className="px-4 py-2 text-left font-medium">Component Name</th>
-                <th className="px-4 py-2 text-left font-medium">Manufacturer</th>
-                <th className="px-4 py-2 text-left font-medium">Part Number</th>
-                <th className="px-4 py-2 text-left font-medium">Description</th>
-                <th className="px-4 py-2 text-left font-medium">Quantity</th>
-                <th className="px-4 py-2 text-left font-medium">Location/Bin</th>
-                <th className="px-4 py-2 text-left font-medium">Unit Price</th>
-                <th className="px-4 py-2 text-left font-medium">Critical Low</th>
-                <th className="px-4 py-2 text-left font-medium">Availability</th>
-                <th className="px-4 py-2 text-left font-medium">Actions</th>
+                {[
+                  "Category",
+                  "Component Name",
+                  "Manufacturer",
+                  "Part Number",
+                  "Description",
+                  "Quantity",
+                  "Location/Bin",
+                  "Unit Price",
+                  "Critical Low",
+                  "Availability",
+                  "Actions",
+                ].map((title) => (
+                  <th key={title} className="px-4 py-2 text-left font-medium">
+                    {title}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -275,19 +282,23 @@ function Inventory() {
                       "In Stock"
                     )}
                   </td>
-                  <td className="px-4 py-2">
-                    <span
-                      className="text-blue-600 cursor-pointer mr-2"
-                      onClick={() => updateProductModalSetting(product)}
-                    >
-                      Edit
-                    </span>
-                    <span
-                      className="text-red-600 cursor-pointer"
-                      onClick={() => deleteItem(product._id)}
-                    >
-                      Delete
-                    </span>
+                  <td className="px-4 py-2 space-x-2">
+                    {["Admin", "Lab Technician"].includes(role) && (
+                      <>
+                        <button
+                          className="text-blue-600 hover:underline"
+                          onClick={() => updateProductModalSetting(product)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="text-red-600 hover:underline"
+                          onClick={() => deleteItem(product._id)}
+                        >
+                          Delete
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import "./index.css";
 
 import Login from "./pages/Login";
@@ -8,32 +8,34 @@ import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import NoPageFound from "./pages/NoPageFound";
 import Layout from "./components/Layout";
-import Labs from "./pages/Labs"; // ✅ Renamed import
+import Labs from "./pages/Labs";
 import Sales from "./pages/Sales";
 import PurchaseDetails from "./pages/PurchaseDetails";
 
 import AuthContext from "./AuthContext";
 import ProtectedWrapper from "./ProtectedWrapper";
+import ProtectedRoute from "./ProtectedRoute";
 
 const App = () => {
-  const [user, setUser] = useState("");
+  const [user, setUser] = useState(null);
   const [loader, setLoader] = useState(true);
 
-  let myLoginUser = JSON.parse(localStorage.getItem("user"));
-
   useEffect(() => {
-    if (myLoginUser) {
-      setUser(myLoginUser._id);
-      setLoader(false);
-    } else {
-      setUser("");
-      setLoader(false);
-    }
-  }, [myLoginUser]);
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser && storedUser._id && storedUser.role) {
+  setUser(storedUser);
+} else {
+  setUser(null); // ensure invalid or corrupted data is cleared
+  localStorage.removeItem("user");
+}
+
+    setLoader(false);
+  }, []);
 
   const signin = (newUser, callback) => {
-    setUser(newUser);
-    callback();
+    setUser(newUser); // Save full user object
+    localStorage.setItem("user", JSON.stringify(newUser));
+    callback(); // Redirect to dashboard
   };
 
   const signout = () => {
@@ -41,28 +43,29 @@ const App = () => {
     localStorage.removeItem("user");
   };
 
-  const value = { user, signin, signout };
+  const value = { user, role: user?.role, signin, signout };
 
-  if (loader)
+  if (loader) {
     return (
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <h1>LOADING...</h1>
+      <div className="flex justify-center items-center h-screen">
+        <h1>Loading...</h1>
       </div>
     );
+  }
 
   return (
     <AuthContext.Provider value={value}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route
+            path="/login"
+            element={!user ? <Login /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/register"
+            element={!user ? <Register /> : <Navigate to="/" />}
+          />
+
           <Route
             path="/"
             element={
@@ -72,11 +75,19 @@ const App = () => {
             }
           >
             <Route index element={<Dashboard />} />
-            <Route path="/inventory" element={<Inventory />} />
-            <Route path="/purchase-details" element={<PurchaseDetails />} />
-            <Route path="/sales" element={<Sales />} />
-            <Route path="/manage-labs" element={<Labs />} /> {/* ✅ Updated */}
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="purchase-details" element={<PurchaseDetails />} />
+            <Route path="sales" element={<Sales />} />
+            <Route
+              path="manage-labs"
+              element={
+                <ProtectedRoute allowedRoles={["Admin"]}>
+                  <Labs />
+                </ProtectedRoute>
+              }
+            />
           </Route>
+
           <Route path="*" element={<NoPageFound />} />
         </Routes>
       </BrowserRouter>
